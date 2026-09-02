@@ -1,139 +1,77 @@
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 from database import get_connection
+from task_repository import get_all_tasks, create_task, get_task, update_task, delete_task
 
 app = FastAPI()
 
+
 class TaskCreate(BaseModel):
-	title: str
-	completed: bool = False
+    title: str
+    completed: bool = False
+
 
 class TaskUpdate(BaseModel):
-	title: str | None = None
-	completed: bool | None = None
+    title: str | None = None
+    completed: bool | None = None
 
 
 def get_db():
-	connection = get_connection()
-	try: 
-		yield connection
-	finally:
-		connection.close()
+    connection = get_connection()
+    try:
+        yield connection
+    finally:
+        connection.close()
 
 
 @app.get("/")
 def home():
-	return {"message" : "Task Management API is running"}
+    return {"message": "Task Management API is running"}
+
 
 @app.get("/tasks")
-def get_tasks(connection = Depends(get_db)):
-	cursor = connection.cursor(dictionary=True)
+def get_tasks(connection=Depends(get_db)):
+    return get_all_tasks(connection)
 
-	cursor.execute("SELECT * FROM tasks")
-	tasks = cursor.fetchall()
-
-	cursor.close()
-
-	return tasks
 
 @app.post("/tasks")
-def create_tasks(task: TaskCreate, connection = Depends(get_db)):
-	cursor = connection.cursor(dictionary=True)
-	
-	cursor.execute("INSERT INTO tasks(title, completed) VALUES (%s,%s)",(task.title, task.completed))
-	connection.commit()
+def create_tasks(task: TaskCreate, connection=Depends(get_db)):
+    return create_task(connection, task.title, task.completed)
 
-	last_row_id = cursor.lastrowid
-	cursor.execute("SELECT * FROM tasks WHERE id = %s",(last_row_id,))
-	new_task = cursor.fetchone()
-
-	cursor.close()
-
-	return new_task
 
 @app.get("/tasks/{task_id}")
-def get_task(task_id: int, connection = Depends(get_db)):
-	cursor = connection.cursor(dictionary=True)
-
-	cursor.execute("SELECT * FROM tasks WHERE id = %s",(task_id,))
-	task = cursor.fetchone()
-
-	cursor.close()
-
-	if task is not None:
-		return task
-	else:
-		raise HTTPException(status_code=404, detail="Task not found")
-
-@app.patch("/tasks/{task_id}")
-def update_task(task_id: int, task: TaskUpdate, connection = Depends(get_db)):
-    cursor = connection.cursor(dictionary=True)
-
-    cursor.execute(
-        "SELECT * FROM tasks WHERE id = %s",
-        (task_id,)
-    )
-
-    existing_task = cursor.fetchone()
-
-    if existing_task is None:
-        cursor.close()
+def get_task_by_id(task_id: int, connection=Depends(get_db)):
+    task = get_task(connection, task_id)
+    if task is not None:
+        return task
+    else:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    if task.title is not None and task.completed is not None:
-        cursor.execute(
-            "UPDATE tasks SET title = %s, completed = %s WHERE id = %s",
-            (task.title, task.completed, task_id)
-        )
-        connection.commit()
 
-    elif task.title is not None:
-        cursor.execute(
-            "UPDATE tasks SET title = %s WHERE id = %s",
-            (task.title, task_id)
-        )
-        connection.commit()
-
-    elif task.completed is not None:
-        cursor.execute(
-            "UPDATE tasks SET completed = %s WHERE id = %s",
-            (task.completed, task_id)
-        )
-        connection.commit()
-
-    cursor.execute(
-        "SELECT * FROM tasks WHERE id = %s",
-        (task_id,)
+@app.patch("/tasks/{task_id}")
+def update_task_by_id(
+    task_id: int,
+    task: TaskUpdate,
+    connection=Depends(get_db)
+):
+    updated_task = update_task(
+        connection,
+        task_id,
+        task.title,
+        task.completed
     )
 
-    updated_task = cursor.fetchone()
-
-    cursor.close()
+    if updated_task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
 
     return updated_task
 
+
 @app.delete("/tasks/{task_id}")
-def delete_task(task_id: int, connection = Depends(get_db)):
-    cursor = connection.cursor(dictionary=True)
+def delete_task_by_id(task_id: int, connection=Depends(get_db)):
+    task_detail = delete_task(connection, task_id)
 
-    cursor.execute(
-        "SELECT * FROM tasks WHERE id = %s",
-        (task_id,)
-    )
-
-    existing_task = cursor.fetchone()
-
-    if existing_task is None:
-        cursor.close()
+    if task_detail is None:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    cursor.execute(
-        "DELETE FROM tasks WHERE id = %s",
-        (task_id,)
-    )
-
-    connection.commit()
-
-    cursor.close()
-
-    return {"message": "Task deleted"}
+    return task_detail
