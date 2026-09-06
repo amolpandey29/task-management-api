@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 def get_all_tasks(connection):
     cursor = connection.cursor(dictionary=True)
 
@@ -7,7 +11,7 @@ def get_all_tasks(connection):
         return tasks
 
     except Exception as e:
-        print("Database error: ", e)
+        logger.error("Database error: %s", e)
         raise
 
     finally:
@@ -34,7 +38,7 @@ def create_task(connection, title, completed):
         return new_task
 
     except Exception as e:
-        print("Database error: ", e)
+        logger.error("Database error: %s", e)
         raise
 
     finally:
@@ -53,7 +57,7 @@ def get_task(connection, task_id):
         return task
 
     except Exception as e:
-        print("Database error: ", e)
+        logger.error("Database error: %s", e)
         raise
 
     finally:
@@ -104,7 +108,7 @@ def update_task(connection, task_id, title, completed):
         return updated_task
 
     except Exception as e:
-        print("Database error: ", e)
+        logger.error("Database error: %s", e)
         raise
 
     finally:
@@ -132,7 +136,7 @@ def delete_task(connection, task_id):
         return {"message": "Task deleted"}
 
     except Exception as e:
-        print("Database error: ", e)
+        logger.error("Database error: %s", e)
         raise
 
     finally:
