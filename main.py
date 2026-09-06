@@ -34,7 +34,7 @@ def get_tasks(connection=Depends(get_db)):
     return get_all_tasks(connection)
 
 
-@app.post("/tasks")
+@app.post("/tasks",status_code=201)
 def create_tasks(task: TaskCreate, connection=Depends(get_db)):
     return create_task(connection, task.title, task.completed)
 
@@ -67,7 +67,7 @@ def update_task_by_id(
     return updated_task
 
 
-@app.delete("/tasks/{task_id}")
+@app.delete("/tasks/{task_id}", status_code=204)
 def delete_task_by_id(task_id: int, connection=Depends(get_db)):
     task_detail = delete_task(connection, task_id)
 

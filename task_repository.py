@@ -133,7 +133,7 @@ def delete_task(connection, task_id):
             (task_id,)
         )
         connection.commit()
-        return {"message": "Task deleted"}
+        return True
 
     except Exception as e:
         logger.error("Database error: %s", e)
