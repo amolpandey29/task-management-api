@@ -6,6 +6,10 @@ def get_all_tasks(connection):
         tasks = cursor.fetchall()
         return tasks
 
+    except Exception as e:
+        print("Database error: ", e)
+        raise
+
     finally:
         cursor.close()
 
@@ -29,6 +33,10 @@ def create_task(connection, title, completed):
         new_task = cursor.fetchone()
         return new_task
 
+    except Exception as e:
+        print("Database error: ", e)
+        raise
+
     finally:
         cursor.close()
 
@@ -43,6 +51,10 @@ def get_task(connection, task_id):
         )
         task = cursor.fetchone()
         return task
+
+    except Exception as e:
+        print("Database error: ", e)
+        raise
 
     finally:
         cursor.close()
@@ -91,6 +103,10 @@ def update_task(connection, task_id, title, completed):
         updated_task = cursor.fetchone()
         return updated_task
 
+    except Exception as e:
+        print("Database error: ", e)
+        raise
+
     finally:
         cursor.close()
 
@@ -114,6 +130,10 @@ def delete_task(connection, task_id):
         )
         connection.commit()
         return {"message": "Task deleted"}
+
+    except Exception as e:
+        print("Database error: ", e)
+        raise
 
     finally:
         cursor.close()
