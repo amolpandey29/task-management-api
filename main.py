@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from database import get_connection
 from task_repository import get_all_tasks, create_task, get_task, update_task, delete_task
 
@@ -7,14 +7,36 @@ app = FastAPI()
 
 
 class TaskCreate(BaseModel):
-    title: str
-    completed: bool = False
+    title: str = Field(..., min_length=1)
+    completed: bool = Field(default=False)
+    @field_validator("title")
+    @classmethod
+    def validate_title(cls, value):
+        value = value.strip()
+
+        if not value:
+            raise ValueError("Title cannot be empty")
+
+        return value
 
 
 class TaskUpdate(BaseModel):
-    title: str | None = None
+    title: str | None = Field(default=None, min_length = 1)
     completed: bool | None = None
 
+    @field_validator("title")
+    @classmethod
+    def validate_title(cls, value):
+
+        if not value:
+            return None
+
+        value = value.strip()
+
+        if not value:
+            raise ValueError("Title cannot be empty")
+
+        return value
 
 def get_db():
     connection = get_connection()
